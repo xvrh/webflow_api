@@ -16,31 +16,31 @@ void main() async {
   // Retreive a collection by ID
   Collection collection = await webflow.collection(collectionId);
   print(collection.name);
-  print(collection.fields[0].name);
+  print(collection.fields[0].displayName);
   print(collection.fields[0].id);
 
   // Fetch collection items with limits and offsets
   ItemsResponse itemResponse =
       await webflow.items(collectionId, limit: 3, offset: 2);
-  print(itemResponse.count);
-  print(itemResponse.total);
-  print(itemResponse.items[0].name);
+  print(itemResponse.pagination.limit);
+  print(itemResponse.pagination.total);
+  print(itemResponse.items[0].fieldData.name);
   print(itemResponse.items[0].id);
-  print(itemResponse.items[0].slug);
+  print(itemResponse.items[0].fieldData.slug);
   print(itemResponse.items[0].json);
 
   // Fetch an item by ID
   const itemId = "insert an item ID";
   ItemsResponse fetchedItem =
       await webflow.item(collectionId: collectionId, itemId: itemId);
-  print(fetchedItem.items[0].name);
-  print(fetchedItem.items[0].slug);
+  print(fetchedItem.items[0].fieldData.name);
+  print(fetchedItem.items[0].fieldData.slug);
 
   // Create a new collection item
   Item newItem = await webflow.createItem(
       collectionId: collectionId, fields: {"name": "insert new item name"});
   print(newItem.id);
-  print(newItem.name);
+  print(newItem.fieldData.name);
   print(newItem.json);
 
   // Remove an item by ID

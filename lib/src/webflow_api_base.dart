@@ -33,20 +33,21 @@ class Webflow {
 
   /// Retreives all the site's CMS collections
   Future<List<Collection>> collections() async {
-    var url = Uri.https(endpoint, "/sites/$siteId/collections");
+    var url = Uri.https(endpoint, "v2/sites/$siteId/collections");
 
     var response = await http.get(url, headers: headers);
 
-    List json = jsonDecode(response.body) as List;
+    var json = jsonDecode(response.body) as Map<String, dynamic>;
     List<Collection> collections =
-        json.map((e) => Collection.fromJson(e)).toList();
+        (json['collections'] as List).map((e) => Collection.fromJson(e)).toList();
     return collections;
   }
 
   /// Retrieves a single CMS collection details, by collection ID
   Future<Collection> collection(String collectionId) async {
-    var url = Uri.https(endpoint, "/collections/$collectionId");
+    var url = Uri.https(endpoint, "v2/collections/$collectionId");
     var response = await http.get(url, headers: headers);
+    print("response ${response.body}");
     dynamic json = jsonDecode(response.body);
     Collection collection = Collection.fromJson(json);
     return collection;
@@ -57,7 +58,7 @@ class Webflow {
   /// Retrieves all the items in a collection, by collection ID
   Future<ItemsResponse> items(String collectionId,
       {int offset = 0, int limit = 100}) async {
-    var url = Uri.https(endpoint, "/collections/$collectionId/items",
+    var url = Uri.https(endpoint, "v2/collections/$collectionId/items",
         {"offset": offset.toString(), "limit": limit.toString()});
 
     var response = await http.get(url, headers: headers);
@@ -72,7 +73,7 @@ class Webflow {
     required String collectionId,
     required String itemId,
   }) async {
-    Uri url = Uri.https(endpoint, "/collections/$collectionId/items/$itemId");
+    Uri url = Uri.https(endpoint, "v2/collections/$collectionId/items/$itemId");
 
     http.Response response = await http.get(url, headers: headers);
 
@@ -87,7 +88,7 @@ class Webflow {
     bool archived = false,
     bool draft = true,
   }) async {
-    var url = Uri.https(endpoint, "/collections/$collectionId/items", {
+    var url = Uri.https(endpoint, "v2/collections/$collectionId/items", {
       "live": live.toString(),
     });
 
@@ -112,7 +113,7 @@ class Webflow {
     required String itemId,
     bool live = false,
   }) async {
-    Uri url = Uri.https(endpoint, "/collections/$collectionId/items/$itemId", {
+    Uri url = Uri.https(endpoint, "v2/collections/$collectionId/items/$itemId", {
       "live": live.toString(),
     });
 
@@ -130,7 +131,7 @@ class Webflow {
     Map<String, dynamic> fields = const {},
     bool live = false,
   }) async {
-    Uri url = Uri.https(endpoint, "/collections/$collectionId/items/$itemId", {
+    Uri url = Uri.https(endpoint, "v2/collections/$collectionId/items/$itemId", {
       "live": live.toString(),
     });
 
