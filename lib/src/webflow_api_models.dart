@@ -108,3 +108,20 @@ class PaginationResponse {
         offset = json['offset'],
         total = json['total'];
 }
+
+/// A webhook registered on a site.
+class Webhook {
+  final String id, triggerType, url;
+
+  /// What signs the webhook's requests (see [isWebflowSignature]). Only in
+  /// the answer to [Webflow.createWebhook] with a site token: an OAuth
+  /// app's webhooks are signed with the app's client secret.
+  final String? secretKey;
+  final Map<String, dynamic> json;
+
+  Webhook.fromJson(this.json)
+      : id = json["id"],
+        triggerType = json["triggerType"],
+        url = json["url"],
+        secretKey = json["secretKey"];
+}

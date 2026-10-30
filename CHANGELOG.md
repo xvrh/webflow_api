@@ -1,3 +1,9 @@
+## 0.3.0
+
+- `webhooks`, `createWebhook` and `removeWebhook` manage the site's webhooks;
+  with a site token, `createWebhook` answers the webhook's `secretKey`
+- `isWebflowSignature` checks a webhook request's signature and age
+
 ## 0.2.0
 
 - `items(live: true)` lists a collection's published items

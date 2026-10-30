@@ -171,6 +171,52 @@ class Webflow {
     return Item.fromJson(jsonDecode(response.body));
   }
 
+  // Webhooks
+
+  /// Retrieves every webhook registered on the site, whoever registered it.
+  ///
+  /// Throws a [WebflowException] when the listing is shorter than the total
+  /// Webflow reports.
+  Future<List<Webhook>> webhooks() async {
+    var url = Uri.https(endpoint, "v2/sites/$siteId/webhooks");
+    var response = _check(await client.get(url, headers: headers));
+
+    var json = jsonDecode(response.body) as Map<String, dynamic>;
+    var webhooks = ((json["webhooks"] ?? []) as List)
+        .map((e) => Webhook.fromJson(e))
+        .toList();
+    var total = (json["pagination"] as Map<String, dynamic>?)?["total"];
+    if (total is int && webhooks.length < total) {
+      throw WebflowException(
+          "Site $siteId listed ${webhooks.length} webhooks "
+          "of the $total it reports");
+    }
+    return webhooks;
+  }
+
+  /// Registers a webhook: Webflow posts each [triggerType] event to [url].
+  ///
+  /// With a site token, the answer carries the webhook's
+  /// [Webhook.secretKey], which signs its requests, and no other answer
+  /// does.
+  Future<Webhook> createWebhook({
+    required String triggerType,
+    required Uri url,
+  }) async {
+    var request = Uri.https(endpoint, "v2/sites/$siteId/webhooks");
+    var response = _check(await client.post(request,
+        headers: headers,
+        body: jsonEncode({"triggerType": triggerType, "url": url.toString()})));
+
+    return Webhook.fromJson(jsonDecode(response.body));
+  }
+
+  /// Removes a webhook, by webhook ID
+  Future<void> removeWebhook(String webhookId) async {
+    var url = Uri.https(endpoint, "v2/webhooks/$webhookId");
+    _check(await client.delete(url, headers: headers));
+  }
+
   /// An error's body is JSON too: decoded as the answer, it fails on the
   /// first missing field, with a cast error that names neither the status
   /// nor Webflow's message.

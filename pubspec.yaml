@@ -2,7 +2,7 @@ name: webflow_api
 description: A Webflow CMS Dart package.
   Useful to manage the collections and items of a Webflow project.
   Could be used to create Flutter apps for managing websites' content.
-version: 0.2.0
+version: 0.3.0
 
 repository: https://github.com/InnoFlutter/webflow_api
 
@@ -10,6 +10,7 @@ environment:
   sdk: '>=2.17.6 <3.0.0'
 
 dependencies:
+  crypto: ^3.0.0
   http: ^1.0.0
   json_annotation:
 

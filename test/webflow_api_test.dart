@@ -109,4 +109,129 @@ void main() {
 
     expect(webflow.allItems("c"), throwsA(isA<WebflowException>()));
   });
+
+  group("webhooks", () {
+    Map<String, dynamic> webhook(String id, {String? secretKey}) => {
+          "id": id,
+          "triggerType": "site_publish",
+          "url": "https://example.com/hook",
+          "siteId": "site",
+          "createdOn": "2026-10-30T12:00:00.000Z",
+          if (secretKey != null) "secretKey": secretKey,
+        };
+
+    test("webhooks lists the site's", () async {
+      late http.Request requested;
+      var webflow = _webflow((request) async {
+        requested = request;
+        return http.Response(
+            jsonEncode({
+              "webhooks": [webhook("w1"), webhook("w2")],
+              "pagination": {"limit": 100, "offset": 0, "total": 2},
+            }),
+            200);
+      });
+
+      var webhooks = await webflow.webhooks();
+
+      expect(requested.method, "GET");
+      expect(requested.url.path, "/v2/sites/site/webhooks");
+      expect(webhooks.map((w) => w.id), ["w1", "w2"]);
+      expect(webhooks.first.url, "https://example.com/hook");
+      expect(webhooks.first.secretKey, isNull);
+    });
+
+    test("webhooks refuses a listing short of its total", () async {
+      var webflow = _webflow((request) async => http.Response(
+          jsonEncode({
+            "webhooks": [webhook("w1")],
+            "pagination": {"limit": 1, "offset": 0, "total": 2},
+          }),
+          200));
+
+      expect(webflow.webhooks(), throwsA(isA<WebflowException>()));
+    });
+
+    test("createWebhook answers the webhook's secret key", () async {
+      late http.Request requested;
+      var webflow = _webflow((request) async {
+        requested = request;
+        return http.Response(
+            jsonEncode(webhook("w1", secretKey: "s3cr3t")), 201);
+      });
+
+      var created = await webflow.createWebhook(
+          triggerType: "site_publish",
+          url: Uri.parse("https://example.com/hook"));
+
+      expect(requested.method, "POST");
+      expect(requested.url.path, "/v2/sites/site/webhooks");
+      expect(jsonDecode(requested.body), {
+        "triggerType": "site_publish",
+        "url": "https://example.com/hook",
+      });
+      expect(created.id, "w1");
+      expect(created.secretKey, "s3cr3t");
+    });
+
+    test("removeWebhook deletes it by id", () async {
+      late http.Request requested;
+      var webflow = _webflow((request) async {
+        requested = request;
+        return http.Response("", 204);
+      });
+
+      await webflow.removeWebhook("w1");
+
+      expect(requested.method, "DELETE");
+      expect(requested.url.path, "/v2/webhooks/w1");
+    });
+  });
+
+  group("isWebflowSignature", () {
+    const secretKey = "2b4acfd1c5518bf0";
+    const timestamp = "1722370035277";
+    const body = '{"triggerType":"site_publish","payload":{"siteId":"s"}}';
+    // HMAC-SHA256 of "$timestamp:$body", computed outside Dart.
+    const signature =
+        "aac7fa85efaae742e63ef051963987810ec8c70a33a9ba075fa7eed0f1d770b9";
+    var sentAt = DateTime.fromMillisecondsSinceEpoch(int.parse(timestamp));
+
+    bool check({
+      String secretKey = secretKey,
+      String? timestamp = timestamp,
+      String? signature = signature,
+      String body = body,
+      Duration after = const Duration(seconds: 2),
+    }) =>
+        isWebflowSignature(
+            secretKey: secretKey,
+            timestamp: timestamp,
+            signature: signature,
+            body: body,
+            now: sentAt.add(after));
+
+    test("accepts the request Webflow signed", () {
+      expect(check(), isTrue);
+      expect(check(signature: signature.toUpperCase()), isTrue);
+    });
+
+    test("refuses another key, body or timestamp", () {
+      expect(check(secretKey: "another"), isFalse);
+      expect(check(body: body.replaceAll('"s"', '"t"')), isFalse);
+      expect(check(timestamp: "1722370035278"), isFalse);
+    });
+
+    test("refuses a request without its headers", () {
+      expect(check(timestamp: null), isFalse);
+      expect(check(signature: null), isFalse);
+      expect(check(timestamp: "yesterday"), isFalse);
+    });
+
+    test("refuses a request sent more than five minutes away", () {
+      expect(check(after: const Duration(minutes: 4)), isTrue);
+      expect(check(after: const Duration(minutes: 6)), isFalse);
+      expect(check(after: -const Duration(minutes: 6)), isFalse);
+    });
+  });
 }

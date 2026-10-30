@@ -2,3 +2,4 @@
 library webflow_api;
 
 export 'src/webflow_api_base.dart';
+export 'src/webhook_signature.dart';
